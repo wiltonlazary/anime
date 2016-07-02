@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>anime.js</title>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="img/favicon.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+<link href="css/styles.css" rel="stylesheet">
+<style>
+  div {
+    width: 100px;
+    height: 100px;
+  }
+</style>
+</head>
+<body>
+<section>
+  <article>
+    <div class="blue"></div>
+  </article>
+</section>
+<script src="../anime.js"></script>
+<script>
+
+  var myAnimation = anime({
+    targets: 'div',
+    translateX: [0, 100]
+  });
+
+  // myAnimation.on('complete', function(anim) {
+  //   console.log('animation completed');
+  //   anim.play(); // will re-play the animation indefinitely
+  // });
+
+  myAnimation.once('update').then(function(anim) {
+    console.log('animation updated');
+  });
+
+  myAnimation.once('complete').then(function(anim) {
+    console.log('animation completed');
+    anim.play(); // will re-play the animation only once
+  });
+
+</script>
+</body>
+</html>

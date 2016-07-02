@@ -541,8 +541,8 @@
             if (is.number(s.loop)) s.loop--;
           } else {
             anim.ended = true;
-            if (s.complete) s.complete(anim);
             anim.pause();
+            if (s.complete) s.complete(anim);
           }
           time.last = 0;
         }
@@ -560,6 +560,7 @@
       var i = animations.indexOf(anim);
       if (i > -1) animations.splice(i, 1);
       if (!animations.length) engine.pause();
+      return anim;
     }
 
     anim.play = function(params) {
@@ -574,13 +575,25 @@
       setWillChange(anim);
       animations.push(anim);
       if (!raf) engine.play();
+      return anim;
     }
 
     anim.restart = function() {
       if (anim.reversed) reverseTweens(anim);
       anim.pause();
       anim.seek(0);
-      anim.play();
+      return anim.play();
+    }
+
+    anim.on = function(e, cb) {
+      anim.settings[e] = cb;
+      return anim;
+    }
+
+    anim.once = function(e) {
+      return new Promise(function(cb) {
+        anim.on(e, cb);
+      });
     }
 
     if (anim.settings.autoplay) anim.play();
