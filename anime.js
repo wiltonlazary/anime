@@ -311,16 +311,33 @@
 
   // Properties
 
+  var getProperty = function(prop, name) {
+    var property = is.object(prop) ? cloneObject(prop) : {value: prop};
+    property.name = name;
+    return property;
+  }
+
   var getProperties = function(params, settings) {
-    var props = [];
+    var properties = [];
     for (var p in params) {
       if (!defaultSettings.hasOwnProperty(p) && p !== 'targets') {
-        var prop = is.object(params[p]) ? cloneObject(params[p]) : {value: params[p]};
-        prop.name = p;
-        props.push(mergeObjects(prop, settings));
+        var props = params[p];
+        if (is.array(props) && is.object(props[0])) {
+          props.forEach(function(prop, index) {
+            var property = mergeObjects(getProperty(prop, p), settings);
+            if (index > 0) {
+              var prev = properties[index-1];
+              if (!is.array(property.value)) property.value = [is.array(prev.value) ? prev.value[1] : prev.value, property.value];
+              property.delay = prev.duration + prev.delay + property.delay;
+            }
+            properties.push(property);
+          });
+        } else {
+          properties.push(mergeObjects(getProperty(props, p), settings));
+        }
       }
     }
-    return props;
+    return properties;
   }
 
   var getPropertiesValues = function(target, prop, value, i) {
@@ -476,28 +493,31 @@
     anim.progress = (time / anim.duration) * 100;
     for (var t = 0; t < anim.tweens.length; t++) {
       var tween = anim.tweens[t];
-      tween.currentValue = getTweenProgress(tween, time);
-      var progress = tween.currentValue;
-      for (var a = 0; a < tween.animatables.length; a++) {
-        var animatable = tween.animatables[a];
-        var id = animatable.id;
-        var target = animatable.target;
-        var name = tween.name;
-        switch (tween.type) {
-          case 'css': target.style[name] = progress; break;
-          case 'attribute': target.setAttribute(name, progress); break;
-          case 'object': target[name] = progress; break;
-          case 'transform':
-          if (!transforms) transforms = {};
-          if (!transforms[id]) transforms[id] = [];
-          transforms[id].push(progress);
-          break;
+      if (tween.delay <= time) {
+        tween.currentValue = getTweenProgress(tween, time);
+        var progress = tween.currentValue;
+        for (var a = 0; a < tween.animatables.length; a++) {
+          var animatable = tween.animatables[a];
+          var id = animatable.id;
+          var target = animatable.target;
+          var name = tween.name;
+          switch (tween.type) {
+            case 'css': target.style[name] = progress; break;
+            case 'attribute': target.setAttribute(name, progress); break;
+            case 'object': target[name] = progress; break;
+            case 'transform':
+            if (!transforms) transforms = {};
+            if (!transforms[id]) transforms[id] = [];
+            transforms[id].push(progress);
+            break;
+          }
         }
       }
     }
     if (transforms) {
       if (!transform) transform = (getCSSValue(document.body, transformStr) ? '' : '-webkit-') + transformStr;
       for (var t in transforms) {
+        console.log(transforms[t]);
         anim.animatables[t].target.style[transform] = transforms[t].join(' ');
       }
     }
