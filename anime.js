@@ -487,37 +487,41 @@
     return recomposeValue(progress, tween.to.strings, tween.from.strings);
   }
 
+  var getActiveTweens = function(tweens, time) {
+    return tweens.map(function(t) {
+      if (t.delay <= time && t.totalDuration > time) { return t };
+    }).filter(function(t) { return !is.undef(t) });
+  }
+
   var setAnimationProgress = function(anim, time) {
     var transforms;
     anim.currentTime = time;
     anim.progress = (time / anim.duration) * 100;
-    for (var t = 0; t < anim.tweens.length; t++) {
-      var tween = anim.tweens[t];
-      if (tween.delay <= time) {
-        tween.currentValue = getTweenProgress(tween, time);
-        var progress = tween.currentValue;
-        for (var a = 0; a < tween.animatables.length; a++) {
-          var animatable = tween.animatables[a];
-          var id = animatable.id;
-          var target = animatable.target;
-          var name = tween.name;
-          switch (tween.type) {
-            case 'css': target.style[name] = progress; break;
-            case 'attribute': target.setAttribute(name, progress); break;
-            case 'object': target[name] = progress; break;
-            case 'transform':
-            if (!transforms) transforms = {};
-            if (!transforms[id]) transforms[id] = [];
-            transforms[id].push(progress);
-            break;
-          }
+    var activeTweens = getActiveTweens(anim.tweens, time);
+    for (var t = 0; t < activeTweens.length; t++) {
+      var tween = activeTweens[t];
+      tween.currentValue = getTweenProgress(tween, time);
+      var progress = tween.currentValue;
+      for (var a = 0; a < tween.animatables.length; a++) {
+        var animatable = tween.animatables[a];
+        var id = animatable.id;
+        var target = animatable.target;
+        var name = tween.name;
+        switch (tween.type) {
+          case 'css': target.style[name] = progress; break;
+          case 'attribute': target.setAttribute(name, progress); break;
+          case 'object': target[name] = progress; break;
+          case 'transform':
+          if (!transforms) transforms = {};
+          if (!transforms[id]) transforms[id] = [];
+          transforms[id].push(progress);
+          break;
         }
       }
     }
     if (transforms) {
       if (!transform) transform = (getCSSValue(document.body, transformStr) ? '' : '-webkit-') + transformStr;
       for (var t in transforms) {
-        console.log(transforms[t]);
         anim.animatables[t].target.style[transform] = transforms[t].join(' ');
       }
     }
