@@ -490,7 +490,7 @@
   var getActiveTweens = function(tweens, time) {
     return tweens.map(function(t, i) {
       if ((tweens[i+1] && tweens[i+1].name === t.name) || (tweens[i-1] && tweens[i-1].name === t.name)) {
-        if (t.delay <= time && t.totalDuration > time) return t;
+        if (time > t.delay && time <= t.totalDuration) return t;
       } else {
         return t;
       }
